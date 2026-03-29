@@ -1,0 +1,18 @@
+{
+    // Launch configuration to run the realtime_mobilenet script with the Run button
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run realtime_mobilenet.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/face_module/dti project folder/realtime_mobilenet.py",
+            "cwd": "${workspaceFolder}/face_module/dti project folder",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONUNBUFFERED": "1"
+            }
+        }
+    ]
+}

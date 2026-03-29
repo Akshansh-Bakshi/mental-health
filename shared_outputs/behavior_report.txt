@@ -1,0 +1,8 @@
+Session Analysis Report
+-----------------------
+Neutral Ratio: 0.09
+Sad Ratio: 0.74
+Happy Ratio: 0.17
+Emotion Variability: 0.14
+Behavior Score: 4
+Risk Level: Moderate Risk
