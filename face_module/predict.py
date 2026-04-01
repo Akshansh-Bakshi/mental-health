@@ -14,19 +14,20 @@ face_cascade = cv2.CascadeClassifier(
     cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
 )
 
+
+
 def predict_emotion(image):
-    
-    print("Model input shape:", model.input_shape)
-    
+
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     faces = face_cascade.detectMultiScale(
         gray,
-        scaleFactor=1.1,
-        minNeighbors=7,
-        minSize=(60, 60)
+        scaleFactor=1.2,
+        minNeighbors=5,
+        minSize=(40, 40)
     )
 
+    # ❗ No face detected
     if len(faces) == 0:
         return "no_face", 0.0
 
@@ -51,7 +52,7 @@ def predict_emotion(image):
     face = face.astype("float32") / 255.0
     face = face.reshape(1, 48, 48, 1)
 
-    preds = model.predict(face)
+    preds = model.predict(face, verbose=0)
 
     emotion = emotion_labels[np.argmax(preds)]
     confidence = float(np.max(preds))
