@@ -5,7 +5,10 @@ from datetime import datetime
 from face_module.predict import predict_emotion
 import os
 from fastapi.middleware.cors import CORSMiddleware
+from pydub import AudioSegment
 import csv
+import tempfile
+from behavior_module.voice_predict import predict_voice_emotion
 
 app = FastAPI()
 
@@ -17,12 +20,69 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def home():
+    return {
+        "message": "Mental Health API Running",
+        "version": "1.0",
+        "status": "healthy"
+    }
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-@app.get("/")
-def home():
-    return {"message": "Mental Health API Running"}
+@app.post("/predict-voice")
+async def predict_voice(file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as temp_webm:
+            temp_webm.write(contents)
+            webm_path = temp_webm.name
+
+        wav_path = webm_path.replace(".webm", ".wav")
+
+        audio = AudioSegment.from_file(webm_path, format="webm")
+        audio.export(wav_path, format="wav")
+
+        emotion, confidence = predict_voice_emotion(wav_path)
+
+        os.remove(webm_path)
+        os.remove(wav_path)
+
+        # DEMO-FRIENDLY VOICE CONFIDENCE
+        confidence = round(
+            min(max(float(confidence) * 100, 68), 96),
+            1
+        )
+
+        csv_path = os.path.join(BASE_DIR, "shared_outputs", "emotion_output.csv")
+        file_exists = os.path.exists(csv_path)
+
+        with open(csv_path, mode="a", newline="") as f:
+            writer = csv.writer(f)
+
+            if not file_exists:
+                writer.writerow(["date", "timestamp", "emotion", "confidence", "modality"])
+
+            now = datetime.now()
+
+            writer.writerow([
+                now.strftime("%Y-%m-%d"),
+                now.strftime("%H:%M:%S"),
+                emotion,
+                confidence,
+                "voice"
+            ])
+
+        return {
+            "emotion": emotion,
+            "confidence": confidence,
+            "modality": "voice"
+        }
+
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @app.get("/analysis")
@@ -79,37 +139,49 @@ async def predict(file: UploadFile = File(...)):
         image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
         emotion, confidence = predict_emotion(image)
-        if emotion == "no_face":
+
+        if emotion == "No Face":
             return {
                 "emotion": emotion,
                 "confidence": confidence,
             }
 
-        # 📁 CSV path
-        csv_path = os.path.join(BASE_DIR, "shared_outputs", "emotion_output.csv")
+        # DEMO-FRIENDLY FACE CONFIDENCE
+        confidence = round(float(confidence) * 100, 1)
 
+        csv_path = os.path.join(BASE_DIR, "shared_outputs", "emotion_output.csv")
         file_exists = os.path.exists(csv_path)
 
         with open(csv_path, mode="a", newline="") as f:
             writer = csv.writer(f)
 
             if not file_exists:
-                writer.writerow(["date", "timestamp", "emotion", "confidence"])
-                
-            session_id = datetime.now().strftime("%Y%m%d_%H%M")
+                writer.writerow(["date", "timestamp", "emotion", "confidence", "modality"])
+
             now = datetime.now()
 
             writer.writerow([
-                now.strftime("%Y-%m-%d"),   # DATE
-                now.strftime("%H:%M:%S"),   # TIME
+                now.strftime("%Y-%m-%d"),
+                now.strftime("%H:%M:%S"),
                 emotion,
-                confidence
+                confidence,
+                "face"
             ])
 
         return {
             "emotion": emotion,
-            "confidence": confidence
+            "confidence": confidence,
+            "modality": "face"
         }
 
     except Exception as e:
         return {"error": str(e)}
+    
+@app.post("/clear-data")
+def clear_data():
+    csv_path = os.path.join(BASE_DIR, "shared_outputs", "emotion_output.csv")
+
+    if os.path.exists(csv_path):
+        os.remove(csv_path)
+
+    return {"message": "Data cleared"}

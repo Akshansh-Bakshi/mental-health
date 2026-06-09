@@ -15,7 +15,6 @@ face_cascade = cv2.CascadeClassifier(
 )
 
 
-
 def predict_emotion(image):
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
