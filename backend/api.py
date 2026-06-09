@@ -2,13 +2,13 @@ from fastapi import FastAPI, UploadFile, File
 import numpy as np
 import cv2
 from datetime import datetime
-from FRONTEND.face_module.predict import predict_emotion
+from backend.face_module.predict import predict_emotion
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from pydub import AudioSegment
 import csv
 import tempfile
-from FRONTEND.behavior_module.voice_predict import predict_voice_emotion
+from backend.behavior_module.voice_predict import predict_voice_emotion
 
 app = FastAPI()
 
@@ -118,7 +118,7 @@ def get_analysis():
         temp_path = os.path.join(BASE_DIR, "shared_outputs", "temp.csv")
         df.to_csv(temp_path, index=False)
 
-        from FRONTEND.behavior_module.behavior_analysis import analyze_emotions
+        from backend.behavior_module.behavior_analysis import analyze_emotions
         result = analyze_emotions(temp_path)
 
         print("STEP 4: RESULT FROM ANALYSIS:", result)
